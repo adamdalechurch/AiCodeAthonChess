@@ -42,6 +42,8 @@
     function Board(){
         this.element = document.getElementById('board');
         this.squares = [];
+        this.selectedSquare = null;
+        this.currentPlayer = 'white';
 
         this.create = function(){
             for(let i = 0; i < 8; i++){
@@ -66,6 +68,17 @@
                 this.element.appendChild(row);
             }
         }
+
+        this.newTurn = function(){
+            if(this.currentPlayer == 'white')
+                this.currentPlayer = 'black';
+            else
+                this.currentPlayer = 'white';
+            
+            if(this.selectedSquare != null)
+                this.selectedSquare.deselect();
+            this.selectedSquare = null;
+        }
     }
 
     function Square(x, y, piece = null){
@@ -84,6 +97,31 @@
             this.piece = piece;
             this.element.appendChild(piece.element);
         }
+
+        this.select = function(){
+            board.selectedSquare = this;
+            this.selected = true;
+            this.element.style.backgroundColor = 'yellow';
+        }
+
+        this.deselect = function(){
+            board.selectedSquare = null;
+            this.selected = false;
+            if((this.x + this.y) % 2 == 0)
+                this.element.style.backgroundColor = 'white';
+            else
+                this.element.style.backgroundColor = 'black';
+        }
+
+        this.element.addEventListener('click', () => {
+            if(board.selectedSquare == null && this.piece != null 
+                && this.piece.color == board.currentPlayer){
+                this.select();
+                return;
+            }
+
+            board.selectedSquare.piece.move(this);
+        });
     }
 
     function Piece(x, y, color, type){
@@ -91,12 +129,62 @@
         this.y = y;
         this.color = color;
         this.type = type;
+        this.isMovedOnce = false;
         this.element = document.createElement('span');
         this.element.className = 'piece' + ' ' + color;
-
         //make it blue for now
         this.element.style.color = 'blue';
         this.element.innerHTML = type;
+
+        this.move = function(square){
+            if(!this.isValidMove(square))
+                return;
+
+            if(square.piece != null){
+                square.piece.element.remove();
+            }
+            square.element.appendChild(this.element);
+            this.x = square.x;
+            this.y = square.y;
+            square.piece = this;
+            this.isMovedOnce = true;
+            board.newTurn();        
+        }
+
+        this.isValidMove = function(square){
+            if(this.type == 'P')
+                return this.isValidPawnMove(square);
+            // else if(this.type == 'R')
+            //     return this.isValidRookMove(square);
+            // else if(this.type == 'N')
+            //     return this.isValidKnightMove(square);
+            // else if(this.type == 'B')
+            //     return this.isValidBishopMove(square);
+            // else if(this.type == 'Q')
+            //     return this.isValidQueenMove(square);
+            // else if(this.type == 'K')
+            //     return this.isValidKingMove(square);
+        }
+
+        this.isValidPawnMove = function(square){
+            if(this.color == 'white'){
+                if(square.y == this.y - 1 && square.x == this.x)
+                    return true;
+                else if(square.y == this.y - 2 && this.isMovedOnce == false)
+                    return true;
+                else if(square.y == this.y - 1 && (square.x == this.x - 1 || square.x == this.x + 1))
+                    return true;
+            }
+            else{
+                if(square.y == this.y + 1 && square.x == this.x)
+                    return true;
+                else if(square.y == this.y + 2 && this.isMovedOnce == false)
+                    return true;
+                else if(square.y == this.y + 1 && (square.x == this.x - 1 || square.x == this.x + 1))
+                    return true;
+            }
+            return false;
+        }
     }
     
 </script>
